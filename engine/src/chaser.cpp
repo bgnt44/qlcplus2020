@@ -298,8 +298,8 @@ void Chaser::slotFunctionRemoved(quint32 fid)
         count = m_steps.removeAll(ChaserStep(fid));
     }
 
-    if (count > 0)
-        emit changed(this->id());
+    //if (count > 0)
+    //    emit changed(this->id());
 }
 
 /*****************************************************************************
