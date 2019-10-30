@@ -83,7 +83,7 @@ float SequenceItem::paintChaser(QPainter *painter, Chaser* chaser, float xpos, f
         m_selectedStep = -1;
     float indent = 0;
     float indentSt = 0;
-    if(false)
+    if(true)
     {
         foreach (ChaserStep step, chaser->steps())
         {
