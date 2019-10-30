@@ -140,7 +140,7 @@ public:
 
     /** @reimpl */
     void setTotalDuration(quint32 msec);
-
+    void setLastStepDuration(quint32 msec);
     /** @reimpl */
     quint32 totalDuration();
 
@@ -154,6 +154,8 @@ public slots:
      * @param fid The ID of the function that was removed
      */
     void slotFunctionRemoved(quint32 fid);
+    void slotStepChanged(quint32 val);
+
 
 protected:
     QList <ChaserStep> m_steps;
@@ -237,6 +239,7 @@ public:
 
     /** Get the first step of the running list. If none is running this returns NULL */
     ChaserRunnerStep currentRunningStep() const;
+
 
 private:
     ChaserAction m_startupAction;

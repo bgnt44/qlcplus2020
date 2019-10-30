@@ -122,6 +122,10 @@ bool Chaser::copyFrom(const Function* function)
 
 bool Chaser::addStep(const ChaserStep& step, int index)
 {
+    Function* f = step.resolveFunction(doc());
+    connect(f, SIGNAL(changed(quint32)),
+            this, SLOT(slotStepChanged(quint32)));
+
     if (step.fid != this->id())
     {
         {
@@ -147,6 +151,9 @@ bool Chaser::removeStep(int index)
     {
         {
             QMutexLocker stepListLocker(&m_stepListMutex);
+            Function* f = m_steps.at(index).resolveFunction(doc());
+            disconnect(f, SIGNAL(changed(quint32)),
+                    this, SLOT(slotStepChanged(quint32)));
             m_steps.removeAt(index);
         }
 
@@ -214,6 +221,28 @@ QList <ChaserStep> Chaser::steps() const
     return m_steps;
 }
 
+void Chaser::setLastStepDuration(quint32 msec)
+{
+    if (durationMode() == Chaser::Common)
+    {
+        int stepsCount = m_steps.count();
+        if (stepsCount == 0)
+            stepsCount = 1;
+        setDuration(msec / stepsCount);
+    }
+    else
+    {
+        int relativeDuration = msec - totalDuration();
+        if( stepAt(stepsCount()-1)->hold + relativeDuration < 200 )
+        {
+            relativeDuration = 200;
+        }
+        stepAt(stepsCount()-1)->hold += relativeDuration;
+        stepAt(stepsCount()-1)->duration += relativeDuration;
+    }
+    emit changed(this->id());
+}
+
 void Chaser::setTotalDuration(quint32 msec)
 {
     if (durationMode() == Chaser::Common)
@@ -256,7 +285,11 @@ quint32 Chaser::totalDuration()
 
     return totalDuration;
 }
-
+void Chaser::slotStepChanged(quint32 val)
+{
+    Q_UNUSED(val);
+    emit changed(this->id());
+}
 void Chaser::slotFunctionRemoved(quint32 fid)
 {
     int count;
@@ -473,6 +506,10 @@ void Chaser::postLoad()
             it.remove();
         else if (function->contains(id())) // forbid self-containment
             it.remove();
+        else{
+            connect(function, SIGNAL(changed(quint32)),
+                    this, SLOT(slotStepChanged(quint32)));
+        }
     }
 }
 

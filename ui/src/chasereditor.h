@@ -60,7 +60,7 @@ public:
 
 private:
     FunctionParent functionParent() const;
-
+    ChaserEditor* bebe = NULL;
 signals:
     void applyValues(QList<SceneValue>&);
     void stepSelectionChanged(int index);
@@ -91,6 +91,8 @@ private slots:
     void slotSpeedDialToggle(bool state);
     void slotItemSelectionChanged();
     void slotItemChanged(QTreeWidgetItem*,int);
+    void slotChangeChaser(QModelIndex mi);
+
 
     /************************************************************************
      * Clipboard

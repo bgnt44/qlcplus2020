@@ -67,6 +67,7 @@ HEADERS += aboutbox.h \
            fixtureconsole.h \
            fixturegroupeditor.h \
            fixturemanager.h \
+           fixturecalibration.h \
            fixtureselection.h \
            fixturetreewidget.h \
            functionmanager.h \
@@ -180,6 +181,7 @@ FORMS += aboutbox.ui \
          fixturegroupeditor.ui \
          fixtureremap.ui \
          fixtureselection.ui \
+         fixturecalibration.ui \
          functionselection.ui \
          functionwizard.ui \
          inputchanneleditor.ui \
@@ -242,6 +244,7 @@ SOURCES += aboutbox.cpp \
            fixtureconsole.cpp \
            fixturegroupeditor.cpp \
            fixturemanager.cpp \
+           fixturecalibration.cpp \
            fixtureremap.cpp \
            fixtureselection.cpp \
            fixturetreewidget.cpp \

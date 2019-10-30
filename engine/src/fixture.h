@@ -29,9 +29,10 @@
 
 #include "qlcchannel.h"
 #include "qlcfixturedef.h"
+#include "fixturecalibrationdata.h"
 
 class QString;
-
+class fixtureCalibrationData;
 class QLCFixtureDefCache;
 class ChannelModifier;
 class QLCFixtureMode;
@@ -55,7 +56,7 @@ class Doc;
 #define KXMLFixtureExcludeFade "ExcludeFade"
 #define KXMLFixtureForcedHTP "ForcedHTP"
 #define KXMLFixtureForcedLTP "ForcedLTP"
-
+#define KXMLFixtureCalibrationData "DataCalib"
 #define KXMLFixtureChannelModifier "Modifier"
 #define KXMLFixtureChannelIndex "Channel"
 #define KXMLFixtureModifierName "Name"
@@ -265,6 +266,8 @@ public:
     /** @see QLCFixtureHead */
     quint32 channelNumber(int type, int controlByte, int head = 0) const;
 
+    const QLCChannel* channel(QLCChannel::Preset preset) const;
+
     /** @see QLCFixtureMode */
     quint32 masterIntensityChannel() const;
 
@@ -452,6 +455,18 @@ public:
 
     /** Creates and returns a fixture mode for a generic RGB panel row */
     QLCFixtureMode *genericRGBPanelMode(QLCFixtureDef *def, Components components, quint32 width, quint32 height);
+
+    /*********************************************************************
+     * Fixture Calibration
+     *********************************************************************/
+public:
+
+    FixtureCalibrationData* getCalibrationData();
+    void AddCalibrationData();
+
+protected:
+
+    FixtureCalibrationData* m_fixtureCalibrationData = NULL;
 
     /*********************************************************************
      * Load & Save

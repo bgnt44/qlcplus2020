@@ -30,6 +30,7 @@
 #define KXMLQLCTrackName      "Name"
 #define KXMLQLCTrackSceneID   "SceneID"
 #define KXMLQLCTrackIsMute    "isMute"
+#define KXMLQLCTrackChannelBound    "channelsBound"
 
 #define KXMLQLCTrackFunctions "Functions"
 
@@ -38,6 +39,7 @@ Track::Track(quint32 sceneID)
     , m_showId(Function::invalidId())
     , m_sceneID(sceneID)
     , m_isMute(false)
+    , m_channelsBound()
 
 {
     setName(tr("New Track"));
@@ -153,6 +155,27 @@ QList <ShowFunction *> Track::showFunctions() const
     return m_functions;
 }
 
+bool showFunctionbefore(ShowFunction* v1, ShowFunction *v2)
+{
+    return (v1->startTime() < v2->startTime());
+}
+
+QList <ShowFunction *> Track::showFunctionsSorted()
+{
+    std::sort(m_functions.begin(),m_functions.end(),showFunctionbefore);
+    return m_functions;
+}
+
+void Track::BindChannelGroups(QStringList chGrp){
+    m_channelsBound.clear();
+    m_channelsBound.append(chGrp);
+}
+
+QStringList Track::GetChannelGroups()
+{
+    return m_channelsBound;
+}
+
 /*****************************************************************************
  * Load & Save
  *****************************************************************************/
@@ -167,6 +190,8 @@ bool Track::saveXML(QXmlStreamWriter *doc)
     if (m_sceneID != Scene::invalidId())
         doc->writeAttribute(KXMLQLCTrackSceneID, QString::number(m_sceneID));
     doc->writeAttribute(KXMLQLCTrackIsMute, QString::number(m_isMute));
+    doc->writeAttribute(KXMLQLCTrackChannelBound, m_channelsBound.join("|"));
+
 
     /* Save the list of Functions if any is present */
     if (m_functions.isEmpty() == false)
@@ -201,6 +226,9 @@ bool Track::loadXML(QXmlStreamReader &root)
 
     if (attrs.hasAttribute(KXMLQLCTrackName) == true)
         m_name = attrs.value(KXMLQLCTrackName).toString();
+
+    if (attrs.hasAttribute(KXMLQLCTrackChannelBound) == true)
+        m_channelsBound = attrs.value(KXMLQLCTrackChannelBound).toString().split("|");
 
     if (attrs.hasAttribute(KXMLQLCTrackSceneID))
     {
@@ -292,8 +320,9 @@ bool Track::postLoad(Doc* doc)
             else
             {
                 // Conflicting scene IDs, we have to remove this sequence
-                it.remove();
-                delete showFunction;
+                //GBA REMOVE SCENE ID DETECTION
+               // it.remove();
+                //delete showFunction;
             }
 #endif
             modified = true;

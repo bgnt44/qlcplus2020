@@ -446,6 +446,7 @@ void App::slotSetProgressText(const QString& text)
 void App::clearDocument()
 {
     m_doc->masterTimer()->stop();
+
     VirtualConsole::instance()->resetContents();
     ShowManager::instance()->clearContents();
     m_doc->clearContents();
@@ -945,7 +946,7 @@ QFile::FileError App::slotFileOpen()
         /* Second thoughts... Cancel loading. */
         return QFile::NoError;
     }
-
+    setActiveWindow(FixtureManager::staticMetaObject.className());
     /* Create a file open dialog */
     QFileDialog dialog(this);
     dialog.setWindowTitle(tr("Open Workspace"));
@@ -982,6 +983,7 @@ QFile::FileError App::slotFileOpen()
         return QFile::NoError;
 
     /* Clear existing document data */
+
     clearDocument();
 
 #ifdef DEBUG_SPEED

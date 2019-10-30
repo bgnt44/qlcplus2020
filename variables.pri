@@ -15,7 +15,7 @@ APPVERSION = 4.12.3 GIT
 #############################################################################
 
 # Treat all compiler warnings as errors
-QMAKE_CXXFLAGS += -Werror
+#QMAKE_CXXFLAGS += -Werror
 
 CONFIG         += warn_on
 
@@ -79,7 +79,7 @@ win32:QMAKE_LFLAGS += -Wl,--enable-auto-import
 # Install root
 win32:INSTALLROOT       = $$(SystemDrive)/qlcplus
 macx:INSTALLROOT        = ~/QLC+.app/Contents
-unix:!macx:INSTALLROOT += /usr
+unix:!macx:INSTALLROOT += ~/qlcrun/
 android:INSTALLROOT     = /
 ios:INSTALLROOT         = /
 

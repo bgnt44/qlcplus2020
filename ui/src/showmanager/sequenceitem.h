@@ -27,6 +27,7 @@
 
 #include "showitem.h"
 #include "chaser.h"
+#include "qlccapability.h"
 
 /** @addtogroup ui_functions
  * @{
@@ -68,7 +69,9 @@ protected:
 
 protected slots:
     void slotSequenceChanged(quint32);
+    QPixmap generatePixmap(Chaser* chaser, float xpos, float maxTime);
 
+    float paintChaser(QPainter *painter, Chaser* chaser, float xpos, float maxTime);
 private:
     /** Calculate sequence width for paint() and boundingRect() */
     void calculateWidth();

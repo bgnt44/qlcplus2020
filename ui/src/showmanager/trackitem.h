@@ -27,8 +27,8 @@
 
 #include "track.h"
 
-#define TRACK_HEIGHT        80
-#define TRACK_WIDTH         150
+#define TRACK_HEIGHT        65
+#define TRACK_WIDTH         155
 
 /** @addtogroup ui_functions
  * @{
@@ -50,6 +50,7 @@ public:
     TrackItem(Track *track, int number);
 
     QRectF boundingRect() const;
+
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
 
     /** Return pointer to the Track class associated to this item */
@@ -72,6 +73,10 @@ public:
 
     /** Return the mute state of the item */
     bool isMute();
+
+    int height();
+
+    void setHeight(int height);
 
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event);
@@ -104,7 +109,7 @@ private:
     bool m_isMute;
     QRectF *m_soloRegion;
     bool m_isSolo;
-
+    int m_height;
     QAction *m_moveUp;
     QAction *m_moveDown;
     QAction *m_changeName;

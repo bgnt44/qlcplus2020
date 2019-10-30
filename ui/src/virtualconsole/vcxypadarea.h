@@ -73,6 +73,8 @@ signals:
 
 public slots:
     void slotFixturePositions(const QVariantList positions);
+    void slotFixturePositionsColor(const QVariantList positions);
+
 
 private:
     /** Make sure the m_dmxPos is inside m_rangeDmxRect */
@@ -104,8 +106,10 @@ private:
 
     /** Used to display fixture positions - yellow */
     QPixmap m_fixturePixmap;
+    QList<QPixmap> m_fixturePixmap2;
 
     QVariantList m_fixturePositions;
+    QVariantList m_fixturePositions2;
 
     /*************************************************************************
      * Range window

@@ -28,6 +28,8 @@
 #include <QDebug>
 #include <QUrl>
 #include <QAction>
+#include <QSplitter>
+
 
 #include "qlcfixturedef.h"
 #include "qlcmacros.h"
@@ -43,6 +45,7 @@
 #include "chaser.h"
 #include "scene.h"
 #include "doc.h"
+#include "showmanager.h"
 
 #define SETTINGS_GEOMETRY "chasereditor/geometry"
 #define PROP_STEP Qt::UserRole
@@ -219,6 +222,8 @@ ChaserEditor::ChaserEditor(QWidget* parent, Chaser* chaser, Doc* doc, bool liveM
 
     connect(m_tree, SIGNAL(itemSelectionChanged()),
             this, SLOT(slotItemSelectionChanged()));
+    connect(m_tree, SIGNAL(doubleClicked(QModelIndex)),
+            this, SLOT(slotChangeChaser(QModelIndex)));
     connect(m_tree, SIGNAL(itemChanged(QTreeWidgetItem*,int)),
             this, SLOT(slotItemChanged(QTreeWidgetItem*,int)));
 
@@ -245,6 +250,15 @@ ChaserEditor::ChaserEditor(QWidget* parent, Chaser* chaser, Doc* doc, bool liveM
 
 ChaserEditor::~ChaserEditor()
 {
+
+    if(bebe != NULL && bebe != this)
+    {
+
+        delete bebe;
+        bebe = NULL;
+
+    }
+
     if (m_speedDials != NULL)
         m_speedDials->deleteLater();
     m_speedDials = NULL;
@@ -919,6 +933,35 @@ void ChaserEditor::slotFadeOutDialChanged(int ms)
     }
 
     m_tree->resizeColumnToContents(COL_FADEOUT);
+}
+
+void ChaserEditor::slotChangeChaser(QModelIndex mi)
+{
+    Q_UNUSED(mi);
+    if (!m_chaser->isRunning())
+    {
+        if (m_tree->selectedItems().count() > 0)
+        {
+            QTreeWidgetItem *item = m_tree->selectedItems().first();
+            int idx = item->text(COL_NUM).toUInt() - 1;
+
+            Chaser* c = qobject_cast<Chaser*>(m_doc->function(m_chaser->stepAt(idx)->fid));
+            if(c){
+                QSplitter* pr =(QSplitter*)this->parent()->parent();
+                if(pr){
+                    if(bebe != NULL )
+                    {
+                        pr->widget(1)->layout()->removeWidget(bebe);
+                        delete bebe;
+                        bebe = NULL;
+
+                    }
+                    bebe = new ChaserEditor(pr, c, m_doc);
+                }
+            }
+
+        }
+    }
 }
 
 void ChaserEditor::slotHoldDialChanged(int ms)

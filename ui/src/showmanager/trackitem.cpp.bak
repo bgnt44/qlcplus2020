@@ -32,9 +32,12 @@ TrackItem::TrackItem(Track *track, int number)
     , m_isMute(false)
     , m_isSolo(false)
 {
+
+    m_height = TRACK_HEIGHT;
+
     m_font = qApp->font();
     m_font.setBold(true);
-    m_font.setPixelSize(12);
+    m_font.setPixelSize(10);
 
     m_btnFont = qApp->font();
     m_btnFont.setBold(true);
@@ -49,8 +52,8 @@ TrackItem::TrackItem(Track *track, int number)
     else
         m_name = QString("Track %1").arg(m_number + 1);
 
-    m_soloRegion = new QRectF(17.0, 10.0, 25.0, 16.0);
-    m_muteRegion = new QRectF(45.0, 10.0, 25.0, 16.0);
+    m_soloRegion = new QRectF(17.0, 5.0, 25.0, 16.0);
+    m_muteRegion = new QRectF(45.0, 5.0, 25.0, 16.0);
 
     m_moveUp = new QAction(QIcon(":/up.png"), tr("Move up"), this);
     connect(m_moveUp, SIGNAL(triggered()),
@@ -195,16 +198,11 @@ void TrackItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
     if (m_track->GetChannelGroups().length() > 0)
     {
         int indent = 0;
-
         foreach(QString s, m_track->GetChannelGroups())
         {
-           if(s != NULL)
-           {
-               QLCChannel::Group nomIcon = QLCChannel::stringToGroup(s);
-               QString icon = QLCChannel::getIconNameFromGroupSt(nomIcon);
-               painter->drawPixmap(15 + indent*20, 24, 18, 18, QIcon(icon).pixmap(18, 18));
-               indent++;
-           }
+           QString icon = QLCChannel::getIconNameFromGroupSt(QLCChannel::stringToGroup(s));
+           painter->drawPixmap(15 + indent*20, 24, 18, 18, QIcon(icon).pixmap(18, 18));
+           indent++;
         }
     }
 

@@ -191,6 +191,8 @@ void SceneEditor::init(bool applyValues)
                                 tr("Paste clipboard values to current fixture"), this);
     m_copyToAllAction = new QAction(QIcon(":/editcopyall.png"),
                                     tr("Copy current values to all fixtures"), this);
+    m_copyToIncAction = new QAction(QIcon(":/editcopyall.png"),
+                                    tr("Propagate current values to all fixtures"), this);
     m_colorToolAction = new QAction(QIcon(":/color.png"),
                                     tr("Color tool for CMY/RGB-capable fixtures"), this);
     m_positionToolAction = new QAction(QIcon(":/xypad.png"),
@@ -257,6 +259,8 @@ void SceneEditor::init(bool applyValues)
             this, SLOT(slotPaste()));
     connect(m_copyToAllAction, SIGNAL(triggered(bool)),
             this, SLOT(slotCopyToAll()));
+    connect(m_copyToIncAction, SIGNAL(triggered(bool)),
+                this, SLOT(slotCopyToInc()));
     connect(m_colorToolAction, SIGNAL(triggered(bool)),
             this, SLOT(slotColorTool()));
     connect(m_positionToolAction, SIGNAL(triggered(bool)),
@@ -286,6 +290,8 @@ void SceneEditor::init(bool applyValues)
     toolBar->addAction(m_copyAction);
     toolBar->addAction(m_pasteAction);
     toolBar->addAction(m_copyToAllAction);
+    toolBar->addSeparator();
+    toolBar->addAction(m_copyToIncAction);
     toolBar->addSeparator();
     toolBar->addAction(m_colorToolAction);
     toolBar->addAction(m_positionToolAction);
@@ -566,6 +572,34 @@ void SceneEditor::slotCopyToAll()
             FixtureConsole* fc = fixtureConsoleTab(i);
             if (fc != NULL)
                 fc->setValues(clipboard->getSceneValues(), m_copyFromSelection);
+        }
+    }
+
+    //m_copy.clear();
+    m_pasteAction->setEnabled(false);
+}
+
+void SceneEditor::slotCopyToInc()
+{
+    int count = m_tab->count();
+    int tab = m_currentTab;
+    FixtureConsole* fc_source = fixtureConsoleTab(tab);
+    QList<SceneValue> lstValueInit = fc_source->values();
+
+    for (int i = m_fixtureFirstTabIndex; i <= count; i++)
+    {
+        if(i != tab)
+        {
+            int realIndex = (tab + i - 1) % (count);
+            FixtureConsole* fc = fixtureConsoleTab(i);
+            if (fc != nullptr)
+            {
+                foreach(SceneValue sv , lstValueInit)
+                {
+                    uchar val = (sv.value * realIndex) % 255;
+                    fc->setValue(sv.channel, val);
+                }
+            }
         }
     }
 

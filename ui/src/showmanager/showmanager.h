@@ -28,6 +28,7 @@
 #include "sequenceitem.h"
 #include "trackitem.h"
 #include "scene.h"
+#include "sequence.h"
 #include "show.h"
 #include "doc.h"
 
@@ -61,7 +62,7 @@ public:
 
     /** Start from scratch; clear everything */
     void clearContents();
-
+void showRightEditor(Function *function);
 signals:
     /** Emitted when the FunctionManager's tab is de/activated */
     void functionManagerActive(bool active);
@@ -97,8 +98,16 @@ protected:
 private:
     void showSceneEditor(Scene *scene);
     void hideRightEditor();
-    void showRightEditor(Function *function);
 
+    Track* FindTrackScene(quint32 sceneId);
+    QString FindTrackSequence(Sequence* seq);
+    Track* CreateTrack(QString trackname,int id,QStringList channelTypes);
+    Track* GetTrackOrCreate(Function* fct);
+    void slotAddScene(Function* selectedFunc);
+    void slotAddSequence(Function* selectedFunc);
+    void slotAddChaser(Function* selectedFunc);
+
+    QStringList GetChannelsTrack(Scene* scene,Fixture* fixture);
 private:
     QSplitter* m_splitter; // main view splitter (horizontal)
     QSplitter* m_vsplitter; // multitrack view splitter (vertical)
@@ -115,7 +124,8 @@ protected:
 
 private:
     bool checkOverlapping(quint32 startTime, quint32 duration);
-
+    bool bCopyScene;
+    bool bShowEditor;
     QToolBar* m_toolbar;
     QComboBox* m_showsCombo;
     QLabel* m_timeLabel;
@@ -124,11 +134,15 @@ private:
     QAction* m_addSequenceAction;
     QAction* m_addAudioAction;
     QAction* m_addVideoAction;
+    QAction* m_copySceneAction;
     QAction* m_copyAction;
     QAction* m_pasteAction;
     QAction* m_deleteAction;
     QAction* m_colorAction;
     QAction* m_lockAction;
+    QAction* m_showEditorsAction;
+
+
     QAction* m_timingsAction;
     QAction* m_snapGridAction;
     QAction* m_stopAction;
@@ -136,6 +150,7 @@ private:
     QComboBox* m_timeDivisionCombo;
     QSpinBox* m_bpmField;
 
+    QAction* m_seqPropagate;
 protected slots:
     /** Slot called when the user selects a show from
      *  the shows combo box */
@@ -148,7 +163,8 @@ protected slots:
     void slotAddSequence();
     void slotAddAudio();
     void slotAddVideo();
-
+    void slotCopyScene(bool enable);
+    void slotPropagate();
     void slotCopy();
     void slotPaste();
     void slotDelete();
@@ -189,7 +205,7 @@ protected slots:
     void slotToggleSnapToGrid(bool enable);
     void slotChangeSize(int width, int height);
     void slotStepSelectionChanged(int index);
-
+    void slotShowEditor(bool enable);
     /*********************************************************************
      * Doc events
      *********************************************************************/

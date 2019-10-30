@@ -33,6 +33,7 @@ ShowItem::ShowItem(ShowFunction *function, QObject *)
     , m_locked(false)
     , m_pressed(false)
     , m_width(50)
+    , m_height(TRACK_HEIGHT - 3)
     , m_timeScale(3)
     , m_trackIdx(-1)
     , m_function(function)
@@ -48,12 +49,17 @@ ShowItem::ShowItem(ShowFunction *function, QObject *)
     m_font.setBold(true);
     m_font.setPixelSize(12);
 
+    m_soloRegion = new QRectF(m_width - 10, 0,10, m_height);
+
     setLocked(m_function->isLocked());
 
     m_alignToCursor = new QAction(tr("Align to cursor"), this);
+
     connect(m_alignToCursor, SIGNAL(triggered()),
             this, SLOT(slotAlignToCursorClicked()));
+
     m_lockAction = new QAction(tr("Lock item"), this);
+
     connect(m_lockAction, SIGNAL(triggered()),
             this, SLOT(slotLockItemClicked()));
 }
@@ -139,6 +145,7 @@ void ShowItem::setWidth(int w)
 {
     m_width = w;
     updateTooltip();
+    m_soloRegion = new QRectF(m_width - 10, 0,10, m_height);
 }
 
 int ShowItem::getWidth()
@@ -146,6 +153,17 @@ int ShowItem::getWidth()
     return m_width;
 }
 
+void ShowItem::setHeight(int h)
+{
+    m_height = h;
+    updateTooltip();
+    m_soloRegion = new QRectF(m_width - 10, 0,10, m_height);
+}
+
+int ShowItem::getHeight()
+{
+    return m_height;
+}
 QPointF ShowItem::getDraggingPos()
 {
     return m_pos;
@@ -223,13 +241,48 @@ void ShowItem::slotLockItemClicked()
     //update();
 }
 
+void ShowItem::keyPressEvent(QKeyEvent *event)
+{
+    if(event->key() == Qt::SHIFT)
+    {
+        m_lastStepUpdate = true;
+    }
+     QGraphicsItem::keyPressEvent(event);
+}
+void ShowItem::keyReleaseEvent(QKeyEvent *event)
+{
+    if(event->key() == Qt::SHIFT)
+    {
+        m_lastStepUpdate = false;
+    }
+    QGraphicsItem::keyReleaseEvent(event);
+}
 void ShowItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     QGraphicsItem::mousePressEvent(event);
+    m_isSolo = false;
     m_pos = this->pos();
     if(event->button() == Qt::LeftButton)
         m_pressed = true;
+    if (m_soloRegion->contains(event->pos().toPoint()))
+    {
+        m_isSolo = !m_isSolo;
+        //emit itemSoloFlagChanged(this, m_isSolo);
+    }
     this->setSelected(true);
+}
+
+void ShowItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    if(!m_isSolo)
+        QGraphicsItem::mouseMoveEvent(event);
+
+    if(m_isSolo)
+    {
+        this->setWidth(event->pos().x());
+        prepareGeometryChange();
+        update();
+    }
 }
 
 void ShowItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
@@ -238,7 +291,19 @@ void ShowItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     qDebug() << Q_FUNC_INFO << "mouse RELEASE event - <" << event->pos().toPoint().x() << "> - <" << event->pos().toPoint().y() << ">";
     setCursor(Qt::OpenHandCursor);
     m_pressed = false;
-    emit itemDropped(event, this);
+
+    if(!m_isSolo)
+        emit itemDropped(event, this);
+    if(m_isSolo)
+    {
+        if(QGuiApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier))
+        {
+             emit itemSized(event, this, true);
+        }else
+        {
+            emit itemSized(event, this, false);
+        }
+    }
 }
 
 void ShowItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
@@ -268,7 +333,8 @@ void ShowItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 
 QRectF ShowItem::boundingRect() const
 {
-    return QRectF(0, 0, m_width, TRACK_HEIGHT - 3);
+   return QRectF(0, 0, m_width, m_height);
+    //return contour;
 }
 
 void ShowItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -283,23 +349,26 @@ void ShowItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, 
 
     // draw item background
     painter->setBrush(QBrush(m_color));
-    painter->drawRect(0, 0, m_width, TRACK_HEIGHT - 3);
-
+    painter->drawRect(0, 0, m_width, m_height);
+    painter->setBrush(Qt::yellow);
+    painter->drawRect(m_width-8,10 , 6, m_height-20);
+    m_font.setPixelSize(m_height/6);
     painter->setFont(m_font);
+
 }
 
 void ShowItem::postPaint(QPainter *painter)
 {
     // draw the function name shadow
-    painter->setPen(QPen(QColor(10, 10, 10, 150), 2));
-    painter->drawText(QRect(4, 6, m_width - 6, 71), Qt::AlignLeft | Qt::TextWordWrap, functionName());
+    painter->setPen(QPen(QColor(10, 10, 10, 150), 1));
+    painter->drawText(QRect(6, 26, m_width - 6, m_height/2), Qt::AlignLeft | Qt::TextWordWrap, functionName());
 
     // draw the function name
-    painter->setPen(QPen(QColor(220, 220, 220, 255), 2));
-    painter->drawText(QRect(3, 5, m_width - 5, 72), Qt::AlignLeft | Qt::TextWordWrap, functionName());
+    painter->setPen(QPen(QColor(220, 220, 220, 255), 1));
+    painter->drawText(QRect(5, 25, m_width - 5, m_height/2), Qt::AlignLeft | Qt::TextWordWrap, functionName());
 
     if (m_locked)
-        painter->drawPixmap(3, TRACK_HEIGHT >> 1, 24, 24, QIcon(":/lock.png").pixmap(24, 24));
+        painter->drawPixmap(3, m_height >> 1, 24, 24, QIcon(":/lock.png").pixmap(24, 24));
 
     if (m_pressed)
     {
@@ -307,7 +376,7 @@ void ShowItem::postPaint(QPainter *painter)
         if (x() > TRACK_WIDTH)
             s_time = (double)(x() - TRACK_WIDTH - 2) * (m_timeScale * 500) /
                      (double)(HALF_SECOND_WIDTH);
-        painter->drawText(3, TRACK_HEIGHT - 10, Function::speedToString(s_time));
+        painter->drawText(3, m_height - 10, Function::speedToString(s_time));
     }
 }
 

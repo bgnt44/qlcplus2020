@@ -160,7 +160,17 @@ quint32 Fixture::universeAddress() const
 {
     return m_address;
 }
-
+void Fixture::AddCalibrationData()
+{
+    if(m_fixtureCalibrationData == nullptr)
+    {
+        m_fixtureCalibrationData = new FixtureCalibrationData();
+    }
+}
+FixtureCalibrationData* Fixture::getCalibrationData()
+{
+    return m_fixtureCalibrationData;
+}
 /*****************************************************************************
  * Channels
  *****************************************************************************/
@@ -202,6 +212,17 @@ const QLCChannel* Fixture::channel(quint32 channel) const
         return m_fixtureMode->channel(channel);
     else
         return NULL;
+}
+
+const QLCChannel* Fixture::channel(QLCChannel::Preset preset) const
+{
+    foreach(QLCChannel* ch, m_fixtureMode->channels())
+    {
+        if(ch->preset() == preset)
+            return ch;
+    }
+    return nullptr;
+
 }
 
 quint32 Fixture::channelAddress(quint32 channel) const
@@ -953,6 +974,11 @@ bool Fixture::loadXML(QXmlStreamReader &xmlDoc, Doc *doc,
                 xmlDoc.skipCurrentElement();
             }
         }
+        else if (xmlDoc.name() == KXMLFixtureCalibrationData)
+        {
+            m_fixtureCalibrationData = new FixtureCalibrationData();
+            m_fixtureCalibrationData->loadXML(xmlDoc);
+        }
         else
         {
             qWarning() << Q_FUNC_INFO << "Unknown fixture tag:" << xmlDoc.name();
@@ -1157,6 +1183,13 @@ bool Fixture::saveXML(QXmlStreamWriter *doc) const
                 doc->writeEndElement();
             }
         }
+    }
+
+    if (m_fixtureCalibrationData)
+    {
+        doc->writeStartElement(KXMLFixtureCalibrationData);
+        m_fixtureCalibrationData->saveXML(doc);
+        doc->writeEndElement();
     }
 
     /* End the <Fixture> tag */

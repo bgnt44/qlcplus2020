@@ -100,6 +100,8 @@ QString PaletteGenerator::typetoString(PaletteGenerator::PaletteType type)
         case SixteenColors: return tr("16 Colours"); break;
         case Shutter: return tr("Shutter macros");
         case Gobos: return tr("Gobo macros");
+        case Movement: return tr("Movement macros");
+        case Dimming: return tr("Dimming macros");
         case ColourMacro: return tr("Colour macros");
         case Animation: return tr("Animations");
         case Undefined:
@@ -128,6 +130,7 @@ QStringList PaletteGenerator::getCapabilities(const Fixture *fixture)
             case QLCChannel::Colour:
             case QLCChannel::Gobo:
             case QLCChannel::Shutter:
+            case QLCChannel::Prism:
             {
                 if (channel->capabilities().size() > 1)
                 {
@@ -155,7 +158,7 @@ QStringList PaletteGenerator::getCapabilities(const Fixture *fixture)
                     case QLCChannel::Magenta: hasMagenta = true; break;
                     case QLCChannel::Yellow: hasYellow = true; break;
                     case QLCChannel::White: hasWhite = true; break;
-                    default: break;
+                    default: caps.append("Dimming"); break;
                 }
             }
             break;
@@ -179,6 +182,12 @@ QStringList PaletteGenerator::getCapabilities(const Fixture *fixture)
     return caps;
 }
 
+QHash<QString,QList<Scene *>> PaletteGenerator::multiscenes()
+{
+    return m_multiscenes;
+}
+
+
 QList<Scene *> PaletteGenerator::scenes()
 {
     return m_scenes;
@@ -198,6 +207,79 @@ void PaletteGenerator::addToDoc()
 {
     foreach(Scene *scene, m_scenes)
         m_doc->addFunction(scene);
+
+    //MultiScene Too
+    Chaser *mgchaser = new Chaser(m_doc);
+    mgchaser->setFadeInMode(Chaser::Common);
+    mgchaser->setFadeInSpeed(300);
+    mgchaser->setFadeOutMode(Chaser::Common);
+    mgchaser->setFadeOutSpeed(0);
+    mgchaser->setDurationMode(Chaser::Common);
+    mgchaser->setDuration(1200);
+    mgchaser->setPath(m_model + "/palette " + QString::number(m_fixtures.count()));
+    mgchaser->setName(tr("%1 mega chaser").arg( m_model));
+
+    QHashIterator <QString,QList<Scene *>> pal(multiscenes());
+    while(pal.hasNext())
+    {
+        pal.next();
+
+        Chaser *chaser = new Chaser(m_doc);
+        Chaser *chaserfast = new Chaser(m_doc);
+
+        chaser->setFadeInMode(Chaser::Common);
+        chaser->setFadeInSpeed(0);
+        chaser->setFadeOutMode(Chaser::Common);
+        chaser->setFadeOutSpeed(0);
+        chaser->setDurationMode(Chaser::Common);
+        chaser->setDuration(1000);
+        chaser->setPath("palette/chaser " + QString::number(m_fixtures.count()));
+        chaser->setName(tr("%1").arg(pal.key()));
+
+        chaserfast->setFadeInMode(Chaser::Common);
+        chaserfast->setFadeInSpeed(0);
+        chaserfast->setFadeOutMode(Chaser::Common);
+        chaserfast->setFadeOutSpeed(0);
+        chaserfast->setDurationMode(Chaser::Common);
+        chaserfast->setDuration(300);
+        chaserfast->setPath("palette/chaser fast " + QString::number(m_fixtures.count()));
+        chaserfast->setName(tr("%1 fast").arg(pal.key()));
+
+        foreach(Scene *scene, pal.value())
+        {
+            m_doc->addFunction(scene);
+            chaser->addStep(ChaserStep(scene->id()));
+            chaserfast->addStep(ChaserStep(scene->id()));
+            //chaser->setDuration(chaser->duration()+1000);
+
+            mgchaser->addStep(ChaserStep(scene->id()));
+            //mgchaser->setDuration(mgchaser->duration()+1000);
+        }
+        m_doc->addFunction(chaser);
+        m_doc->addFunction(chaserfast);
+
+        Chaser *chaserLoop = new Chaser(m_doc);
+        Chaser *chaserLoopFast = new Chaser(m_doc);
+
+        chaserLoop->setRunOrder(Chaser::Loop);
+        chaserLoop->setPath("palette/loop " + QString::number(m_fixtures.count()));
+        chaserLoop->setDurationMode(Chaser::Common);
+        chaserLoop->setDuration(10000);
+        chaserLoop->setName(tr("%1 loop").arg(pal.key()));
+
+        chaserLoopFast->setRunOrder(Chaser::Loop);
+        chaserLoopFast->setPath("palette/loop fast " + QString::number(m_fixtures.count()));
+        chaserLoopFast->setDurationMode(Chaser::Common);
+        chaserLoopFast->setDuration(10000);
+        chaserLoopFast->setName(tr("%1 lpfast").arg(pal.key()));
+
+        chaserLoop->addStep(ChaserStep(chaser->id()));
+        chaserLoopFast->addStep(ChaserStep(chaserfast->id()));
+
+        m_doc->addFunction(chaserLoop);
+        m_doc->addFunction(chaserLoopFast);
+    }
+    m_doc->addFunction(mgchaser);
 
     foreach(Chaser *chaser, m_chasers)
     {
@@ -369,6 +451,206 @@ void PaletteGenerator::createRGBCMYScene(QList<SceneValue> rcMap,
     }
 }
 
+void PaletteGenerator::createCapabilityScene(QHash<quint32, QList<quint32>> chMap,
+                                             PaletteGenerator::PaletteSubType subType)
+{
+    if (chMap.size() == 0)
+        return;
+
+    Fixture *fxi = m_fixtures.at(0);
+    Q_ASSERT(fxi != NULL);
+    QHashIterator <quint32, QList<quint32>> it(chMap);
+    QStringList tmpCapList;
+
+    QList<quint32> lstCh = it.next().value();
+    QHash<QString,Scene*> scenesTemp;
+    for(int chNum = 0; chNum < lstCh.count(); chNum++)
+    {
+        const QLCChannel* channel = fxi->channel(lstCh[chNum]);
+
+        for (int cIdx = 0; cIdx < channel->capabilities().count(); cIdx++)
+        {
+
+            Scene *scene = new Scene(m_doc);
+            Scene *evenScene = NULL;
+            Scene *oddScene = NULL;
+            bool even = false;
+            QLCCapability *cap = channel->capabilities().at(cIdx);
+
+            uchar value = cap->middle();
+            QString name = cap->name();
+
+            // Do not add the same capability twice
+            //if (tmpCapList.contains(name))
+             //   continue;
+
+            tmpCapList.append(name);
+
+            if (subType == OddEven)
+            {
+                evenScene = new Scene(m_doc);
+                oddScene = new Scene(m_doc);
+            }
+
+            QHashIterator <quint32, QList<quint32>> itBis(chMap);
+            while (itBis.hasNext() == true)
+            {
+                itBis.next();
+                scene->setValue(itBis.key(), itBis.value()[chNum], value);
+                if (subType == OddEven)
+                {
+                    if (even)
+                        evenScene->setValue(itBis.key(), itBis.value()[chNum], value);
+                    else
+                        oddScene->setValue(itBis.key(), itBis.value()[chNum], value);
+                    even = !even;
+                }
+            }
+
+            scene->setName(name + " - " + m_model);
+            scene->setPath(m_model+"/"+channel->name());
+            m_multiscenes[channel->name()].append(scene);
+            if (subType == OddEven)
+            {
+                evenScene->setName(name + " - " + m_model + tr(" - Even"));
+                oddScene->setName(name + " - " + m_model + tr(" - Odd"));
+                evenScene->setPath(m_model+"/"+channel->name()+"/even");
+                oddScene->setPath(m_model+"/"+channel->name()+"/odd");
+                m_multiscenes[channel->name()].append(evenScene);
+                m_multiscenes[channel->name()].append(oddScene);
+            }
+        }
+    }
+}
+
+QList<Fixture*> PaletteGenerator::fixtures()
+{
+    return m_fixtures;
+}
+
+void PaletteGenerator::createDimmingScene()
+{
+
+    int n = m_fixtures.count();
+    for(int i=0;i<(1<<n);i++)
+    {
+        Scene *scene = new Scene(m_doc);
+        scene->setName("Chaser Dimming ");
+        int somme=0;
+        for(int j=0;j<n;j++)
+        {
+            Fixture* fi = m_fixtures.at(j);
+            int chNum = fi->channelNumber(QLCChannel::Intensity,QLCChannel::MSB);
+            bool max = (i & (1<<j));
+            scene->setValue(fi->id(),chNum, (int)max * 255);
+            scene->setPath(m_model+"/Dimming " + QString::number(m_fixtures.count()));
+            scene->setName(scene->name() + (max?"1":"0"));
+            somme += max;
+        }
+        QString str = "Dim " + QString::number(somme);
+        m_multiscenes[str].append(scene);
+
+    }
+
+}
+
+void PaletteGenerator::createCapScene(QLCChannel::Group group)
+{
+    int n = m_fixtures.count();
+
+    Fixture *fxiModel = m_fixtures.at(0);
+    quint32 chNumS = fxiModel->channel(group,QLCChannel::NoColour);
+
+    const QLCChannel* channel = fxiModel->channel(chNumS);
+
+    for (int cIdx = 0; cIdx < channel->capabilities().count(); cIdx++)
+    {
+        //Recupere all cap fix1
+        int count = 0;
+        QLCCapability *cap = channel->capabilities().at(cIdx);
+        //on test toutes les fixures
+
+        Scene *scene = new Scene(m_doc);
+        scene->setName(cap->name() + " " + QString::number(n) + " fixts");
+
+        QList<Scene*> scenes;
+        for(int j=0;j<n;j++)
+        {
+            Fixture* cFixt = m_fixtures.at(j);
+            quint32 chNum = cFixt->channel(group,QLCChannel::NoColour);
+            const QLCChannel* cChan = cFixt->channel(chNum);
+            if(cChan != nullptr)
+            {
+                for (int cIdx = 0; cIdx < cChan->capabilities().count(); cIdx++)
+                {
+
+                    if(cChan->capabilities().at(cIdx)->name() == cap->name())
+                    {
+                        count++;
+                        Scene *sceneInd = new Scene(m_doc);
+                        sceneInd->setName(cap->name() + " " + cFixt->name() + "_Solo");
+                        sceneInd->setValue(cFixt->id(), chNum, cChan->capabilities().at(cIdx)->middle());
+                        sceneInd->setPath(QLCChannel::groupToString(group)+"/" + QString::number(m_fixtures.count()));
+                        scenes.append(sceneInd);
+                        scene->setValue(cFixt->id(), chNum, cChan->capabilities().at(cIdx)->middle());
+                    }
+                }
+            }
+
+            //bool max = (i & (1<<j));
+            scene->setPath(QLCChannel::groupToString(group)+"/" + QString::number(m_fixtures.count()));
+            //scene->setName(scene->name() + (max?"1":"0"));
+            //somme += max;
+        }
+        if(count == n){
+            QString strs = QLCChannel::groupToString(group) + QString::number(n) + cap->name();
+            m_multiscenes[strs].append(scenes);
+            QString str = QLCChannel::groupToString(group) + QString::number(n);
+            m_multiscenes[str].append(scene);
+        }
+    }
+}
+
+
+void PaletteGenerator::createMoveScene()
+{
+    int n = m_fixtures.count();
+    for(int i=0;i<(1<<n);i++)
+    {
+        Scene *scene = new Scene(m_doc);
+        scene->setName("Move Position ");
+        int somme=0;
+        for(int j=0;j<n;j++)
+        {
+            Fixture* fi = m_fixtures.at(j);
+            int chNumP = fi->channelNumber(QLCChannel::Pan,QLCChannel::MSB);
+            int chNumT = fi->channelNumber(QLCChannel::Tilt,QLCChannel::MSB);
+            int chNumP2 = fi->channelNumber(QLCChannel::Pan,QLCChannel::LSB);
+            int chNumT2 = fi->channelNumber(QLCChannel::Tilt,QLCChannel::LSB);
+            bool max = (i & (1<<j));
+            if(fi->getCalibrationData() == NULL)
+            {
+                scene->setValue(fi->id(),chNumT, 100 + (int)max * 50);
+                scene->setValue(fi->id(),chNumP, 100 + (int)max * 50);
+            }else{
+
+                scene->setValue(fi->id(),chNumT, fi->getCalibrationData()->getMinPan() + (int)max * (fi->getCalibrationData()->getMaxPan() - fi->getCalibrationData()->getMinPan()));
+                scene->setValue(fi->id(),chNumP, fi->getCalibrationData()->getMinTilt() + (int)max * (fi->getCalibrationData()->getMaxTilt() - fi->getCalibrationData()->getMinTilt()));
+            }
+            scene->setValue(fi->id(),chNumP2, 0);
+            scene->setValue(fi->id(),chNumT2, 0);
+            scene->setPath(m_model+"/Movements " + QString::number(m_fixtures.count()));
+            somme += max;
+            scene->setName(scene->name() + (max?"1":"0"));
+
+        }
+         QString str = "Move " + QString::number(somme);
+         m_multiscenes[str].append(scene);
+
+    }
+
+}
+
 void PaletteGenerator::createCapabilityScene(QHash<quint32, quint32> chMap,
                                              PaletteGenerator::PaletteSubType subType)
 {
@@ -489,7 +771,7 @@ void PaletteGenerator::createFunctions(PaletteGenerator::PaletteType type,
     QList<SceneValue> m_magentaList;
     QList<SceneValue> m_yellowList;
     QList<SceneValue> m_whiteList;
-    QHash<quint32, quint32> m_goboList;
+    QHash<quint32,  QList<quint32>> m_goboList;
     QHash<quint32, quint32> m_shutterList;
     QHash<quint32, quint32> m_colorMacroList;
 
@@ -508,7 +790,7 @@ void PaletteGenerator::createFunctions(PaletteGenerator::PaletteType type,
             {
                 case QLCChannel::Pan: m_panList[fxID] = ch; break;
                 case QLCChannel::Tilt: m_tiltList[fxID] = ch; break;
-                case QLCChannel::Gobo: m_goboList[fxID] = ch; break;
+                case QLCChannel::Gobo: m_goboList[fxID].append(ch); break;
                 case QLCChannel::Shutter: m_shutterList[fxID] = ch; break;
                 case QLCChannel::Colour: m_colorMacroList[fxID] = ch; break;
                 case QLCChannel::Intensity:
@@ -576,7 +858,19 @@ void PaletteGenerator::createFunctions(PaletteGenerator::PaletteType type,
         break;
         case ColourMacro:
         {
-            createCapabilityScene(m_colorMacroList, subType);
+            createCapScene(QLCChannel::Colour);
+            createChaser(typetoString(type));
+        }
+        break;
+        case Dimming:
+        {
+            createDimmingScene();
+            createChaser(typetoString(type));
+        }
+        break;
+        case Movement:
+        {
+            createMoveScene();
             createChaser(typetoString(type));
         }
         break;

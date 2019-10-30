@@ -56,7 +56,9 @@ public:
         Shutter,
         Gobos,
         ColourMacro,
-        Animation
+        Animation,
+        Movement,
+        Dimming
     };
 
     enum PaletteSubType
@@ -110,22 +112,27 @@ public:
     static QStringList getCapabilities(const Fixture* fixture);
 
     QList<Scene *> scenes();
+    QHash<QString,QList<Scene *>> multiscenes();
     QList<Chaser *> chasers();
     QList<RGBMatrix *> matrices();
+    QList<Fixture *> fixtures();
 
     void addToDoc();
 
 private:
     void createColorScene(QList<SceneValue> chMap, QString name, PaletteSubType subType);
-
+    void createCapScene(QLCChannel::Group preset);
     void createRGBCMYScene(QList<SceneValue> rcMap,
                            QList<SceneValue> gmMap,
                            QList<SceneValue> byMap,
                            QString name, bool rgb, PaletteSubType subType);
 
     void createCapabilityScene(QHash<quint32, quint32> chMap, PaletteSubType subType);
+    void createCapabilityScene(QHash<quint32, QList<quint32>> chMap, PaletteGenerator::PaletteSubType subType);
 
     void createRGBMatrices(QList<SceneValue> rgbMap);
+    void createDimmingScene();
+    void createMoveScene();
 
     void createChaser(QString name);
 
@@ -147,6 +154,7 @@ private:
     FixtureGroup *m_fixtureGroup;
     QString m_model;
     QList <Scene*> m_scenes;
+    QHash<QString,QList<Scene *>> m_multiscenes;
     QList <Chaser*> m_chasers;
     QList <RGBMatrix*> m_matrices;
 };

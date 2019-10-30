@@ -81,6 +81,7 @@ HEADERS += bus.h \
            efxfixture.h \
            fadechannel.h \
            fixture.h \
+           fixturecalibrationdata.h \
            fixturegroup.h \
            function.h \
            genericdmxsource.h \
@@ -159,6 +160,7 @@ SOURCES += bus.cpp \
            efxfixture.cpp \
            fadechannel.cpp \
            fixture.cpp \
+           fixturecalibrationdata.cpp \
            fixturegroup.cpp \
            function.cpp \
            genericdmxsource.cpp \

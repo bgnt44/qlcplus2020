@@ -123,6 +123,16 @@ private:
     bool m_isMute;
 
     /*********************************************************************
+     * Channels Groups Data
+     *********************************************************************/
+public:
+    void BindChannelGroups(QStringList chGrp);
+    QStringList GetChannelGroups();
+
+private:
+    /** Flag to mute/unmute this track */
+    QStringList m_channelsBound;
+    /*********************************************************************
      * Functions
      *********************************************************************/
 public:
@@ -140,7 +150,7 @@ public:
     bool addShowFunction(ShowFunction *func);
 
     QList <ShowFunction *> showFunctions() const;
-
+    QList <ShowFunction *> showFunctionsSorted();
 private:
     /** List of Function IDs present in this track */
     QList <ShowFunction *> m_functions;

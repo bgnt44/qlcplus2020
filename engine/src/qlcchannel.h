@@ -232,6 +232,9 @@ public:
     /** Get the channel's icon resource name */
     QString getIconNameFromGroup(QLCChannel::Group grp, bool svg = false) const;
 
+    static QString getIconNameFromGroupSt(QLCChannel::Group grp, bool svg = false);
+
+
 private:
     QPixmap drawIntensity(QColor color, QString str) const;
 

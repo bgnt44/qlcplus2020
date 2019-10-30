@@ -95,6 +95,7 @@ private slots:
     void slotCopy();
     void slotPaste();
     void slotCopyToAll();
+    void slotCopyToInc();
     void slotColorTool();
     void slotPositionTool();
     QColor slotColorSelectorChanged(const QColor &color);
@@ -118,6 +119,7 @@ private:
     QAction* m_copyAction;
     QAction* m_pasteAction;
     QAction* m_copyToAllAction;
+    QAction* m_copyToIncAction;
     QAction* m_colorToolAction;
     QAction* m_positionToolAction;
     QAction* m_blindAction;
