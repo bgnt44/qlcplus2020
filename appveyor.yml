@@ -55,7 +55,7 @@ build_script:
           echo 'Silently installing QLC+...'
           make install -s
           ls /c/
-          cp *.qm /c/qlcplus
+          #cp *.qm /c/qlcplus
           cd /c/qlcplus
           sed -i -e 's/Qt/projects/g' qlcplus4Qt5.nsi
           makensis -X'SetCompressor /FINAL lzma' qlcplus4Qt5.nsi
