@@ -54,8 +54,8 @@ build_script:
           make
           echo 'Silently installing QLC+...'
           make install -s
-          cp *.qm /c/qlcplus
-          cd /c/qlcplus
+          cp *.qm /c/qlcplus2020
+          cd /c/qlcplus2020
           sed -i -e 's/Qt/projects/g' qlcplus4Qt5.nsi
           makensis -X'SetCompressor /FINAL lzma' qlcplus4Qt5.nsi
           #set CURRDATE=`date +%Y%m%d`
