@@ -42,7 +42,7 @@ build_script:
           cd i386
           gendef.exe - ftd2xx.dll > ftd2xx.def
           dlltool -k --input-def ftd2xx.def --dllname ftd2xx.dll --output-lib libftd2xx.a
-          cd /c/projects/qlcplus
+          cd /c/projects/qlcplus2020
           # disable the test units, since we won't run them
           sed -i -e 's/  SUBDIRS += test/#SUBDIRS += test/g' engine/engine.pro
           sed -i -e 's/SUBDIRS += test/#SUBDIRS += test/g' ui/ui.pro
@@ -59,8 +59,8 @@ build_script:
           sed -i -e 's/Qt/projects/g' qlcplus4Qt5.nsi
           makensis -X'SetCompressor /FINAL lzma' qlcplus4Qt5.nsi
           #set CURRDATE=`date +%Y%m%d`
-          mv QLC+_*.exe /c/projects/qlcplus/QLC+_$APPVEYOR_BUILD_VERSION.exe
-          ls /c/projects/qlcplus/*.exe
+          mv QLC+_*.exe /c/projects/qlcplus2020/QLC+_$APPVEYOR_BUILD_VERSION.exe
+          ls /c/projects/qlcplus2020/*.exe
           exit 0
         '@
 
